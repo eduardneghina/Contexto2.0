@@ -72,6 +72,9 @@ class WebController:
                 e.click()
                 break
 
+    def fetch_the_words_raw(self):
+        pass
+
     def update_all_words(self):
         gamenumber_str = self.initiate_contexto()
         gamenumber = int(gamenumber_str)

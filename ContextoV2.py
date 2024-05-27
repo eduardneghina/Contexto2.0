@@ -7,7 +7,7 @@ from WebController import *
 
 driver = WebController()
 
-driver.update_all_words()
+
 
 time.sleep(3)
 
