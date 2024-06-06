@@ -26,10 +26,11 @@ class WebController:
         finally:
             return "string?"
 
-##############################################################################
-#    Privat funtions for different actions
+##########################################################################
 #
+#   Privat funtions for different actions
 #
+
     def __click_yes_for_give_up(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'share-btn')
         for e in elements:
@@ -49,9 +50,12 @@ class WebController:
         print("Cuvantul random introdus a fost " + random_word)
 
 #
-# End of privat functions
+#   End of privat functions
 #
-#####################################
+##########################################################################
+#
+# Start of basic functions like click on diffrent buttons or simple actions like go to x game
+#
     def click_3dots(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'btn')
         for e in elements:
@@ -100,3 +104,25 @@ class WebController:
         print(gamenumber)
         return gamenumber
 
+#
+#   End of basic functions
+#
+##########################################################################
+#
+# Start of complex functions such as extracting data
+#
+
+    def extract_data_from_the_game(self):
+        self.click_3dots()
+        self.click_give_up()
+        time.sleep(3)
+        self.click_closest_word()
+        time.sleep(3)
+        #
+        data = []
+        elements = self.driver.find_elements(By.CLASS_NAME, 'row-wrapper')
+        for e in elements:
+            data.append(e.text.split('\n'))
+        res = []
+        [res.append(x) for x in data if x not in res]
+        return res
