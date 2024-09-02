@@ -12,6 +12,7 @@ import random
 class WebController:
     def __init__(self):
         self.driver = webdriver.Chrome()
+        self.path = "C:\\Contexto\\data.txt"
 
     def initiate_contexto(self):
         self.driver.get("https://contexto.me/")
@@ -28,7 +29,7 @@ class WebController:
 
 ##########################################################################
 #
-#   Privat funtions for different actions
+#   Private functions for different actions
 #
 
     def __click_yes_for_give_up(self):
@@ -48,6 +49,24 @@ class WebController:
             e.send_keys(random_word, Keys.ENTER)
             break
         print("Cuvantul random introdus a fost " + random_word)
+
+    def __load_data(self):
+        try:
+            with open(self.path, "r") as infile:
+                data = infile.read()
+            return data
+        except FileNotFoundError:
+            print("File/directory not found.")
+            return None
+
+    def __save_data(self, data):
+        with open(self.path, "w") as outfile:
+            outfile.write(data)
+
+    def __add_data(self, new_data):
+        data = self.__load_data()
+        data += "\n" + new_data
+        self.__save_data(data)
 
 #
 #   End of privat functions
@@ -101,8 +120,14 @@ class WebController:
     def get_game_number(self):
         elements = self.driver.find_element(By.XPATH, "//span[contains(text(), '#')]")
         gamenumber = elements.text.split('#')[1].strip()
-        print(gamenumber)
+        #print(gamenumber)
         return gamenumber
+
+    def click_on_x_to_close_previous_games(self):
+        elements = self.driver.find_elements(By.CLASS_NAME, "modal-close-button")
+        for e in elements:
+            e.click()
+            break
 
 #
 #   End of basic functions
@@ -113,6 +138,14 @@ class WebController:
 #
 
     def extract_data_from_the_game(self):
+        """
+        The view must be in the desired game.
+        So : || click_desired_previous_games || should be used to be in the desired game number
+        Automatically : Give up + open "closest words" menu.
+        All the data is extracted and returned already parsed in form of :
+        [['chief', '1'], ['deputy', '2'], ['chairman', '3'], ['officer', '4'], ['vice', '5'] ... and so on
+        """
+
         self.click_3dots()
         self.click_give_up()
         time.sleep(3)
@@ -126,3 +159,24 @@ class WebController:
         res = []
         [res.append(x) for x in data if x not in res]
         return res
+
+
+
+    def extract_all_history_games(self):
+        for i in range(int(self.get_game_number())):
+            time.sleep(1)
+            try:
+                data = self.extract_data_from_the_game()
+                print(data) # TO BE CODED FOR SAVING IN A FILE LATER
+            except:
+                print("something went wrong in extract_all_history_games ? ")
+            else:
+                self.click_on_x_to_close_previous_games()
+                self.click_3dots()
+                self.click_previous_games()
+                time.sleep(1)
+                self.click_desired_previous_games(int(self.get_game_number()) - 1)
+                time.sleep(1)
+
+
+

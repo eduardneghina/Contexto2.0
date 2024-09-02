@@ -17,4 +17,7 @@ from WebController import *
 
 WebControllerObject = WebController()
 WebControllerObject.initiate_contexto()
-print(WebControllerObject.extract_data_from_the_game())
+
+
+
+WebControllerObject.extract_all_history_games()
