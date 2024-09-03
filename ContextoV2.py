@@ -18,6 +18,3 @@ from WebController import *
 WebControllerObject = WebController()
 WebControllerObject.initiate_contexto()
 
-
-
-WebControllerObject.extract_all_history_games()

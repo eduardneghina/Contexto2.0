@@ -1,18 +1,35 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
-from random_word import RandomWords
+#from random_word import RandomWords
+from wonderwords import RandomWord
 import time
 import re
 import os
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.action_chains import ActionChains
 import random
+
 
 
 class WebController:
     def __init__(self):
-        self.driver = webdriver.Chrome()
-        self.path = "C:\\Contexto\\data.txt"
+        """
+
+        Hardcoded to use Brave Browser
+
+        """
+        #C:\Program Files\BraveSoftware\Brave-Browser\Application
+        BROWSER_PATH = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+        options = Options()
+        options.binary_location = BROWSER_PATH
+        service = Service(ChromeDriverManager().install())
+        self.driver = webdriver.Chrome(service=service, options=options)
+        #self.driver = webdriver.Chrome()
+        self.db_path_directory = "C:\\Temp\\Contexto"
+        self.db_path_file = "C:\\Temp\\Contexto\\data.txt"
 
     def initiate_contexto(self):
         self.driver.get("https://contexto.me/")
@@ -40,9 +57,9 @@ class WebController:
                 #e.click()
                 break
 
-    def __insert_a_random_word(self):
-        r = RandomWords()
-        random_word = r.get_random_word()
+    def insert_a_random_word_nouns_library(self):
+        r = RandomWord()
+        random_word = r.random_words(1, include_parts_of_speech=["nouns"])[0]
         print("In random_word avem : " + random_word)
         elements = self.driver.find_elements(By.CLASS_NAME, 'word')
         for e in elements:
@@ -52,28 +69,37 @@ class WebController:
 
     def __load_data(self):
         try:
-            with open(self.path, "r") as infile:
+            with open(self.db_path_file, "r") as infile:
                 data = infile.read()
             return data
         except FileNotFoundError:
-            print("File/directory not found.")
-            return None
+            print("File/directory not found. We will try to create one")
+            os.makedirs(self.db_path_directory, exist_ok=True)
+            with open(self.db_path_file, "w") as starting_file:
+                pass
 
     def __save_data(self, data):
-        with open(self.path, "w") as outfile:
+        with open(self.db_path_file, "w") as outfile:
             outfile.write(data)
 
     def __add_data(self, new_data):
         data = self.__load_data()
-        data += "\n" + new_data
-        self.__save_data(data)
-
+        if isinstance(new_data, list):
+            new_data = "\n".join(map(str, new_data))
+        elif not isinstance(new_data, str):
+            new_data = str(new_data)
+        if new_data in data:
+            print("Data is already in the file. No changes made.")
+        else:
+            data += "\n" + new_data
+            self.__save_data(data)
+            print("Data added successfully.")
 #
-#   End of privat functions
+#   End of private functions
 #
 ##########################################################################
 #
-# Start of basic functions like click on diffrent buttons or simple actions like go to x game
+# Start of basic functions like click on different buttons or simple actions like go to x game
 #
     def click_3dots(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'btn')
@@ -128,7 +154,6 @@ class WebController:
         for e in elements:
             e.click()
             break
-
 #
 #   End of basic functions
 #
@@ -151,7 +176,6 @@ class WebController:
         time.sleep(3)
         self.click_closest_word()
         time.sleep(3)
-        #
         data = []
         elements = self.driver.find_elements(By.CLASS_NAME, 'row-wrapper')
         for e in elements:
@@ -163,13 +187,23 @@ class WebController:
 
 
     def extract_all_history_games(self):
+        """
+        Starts to fetch all games data and write the in a txt file, start with the most recent game and doesn't add doubles
+
+        """
         for i in range(int(self.get_game_number())):
             time.sleep(1)
             try:
                 data = self.extract_data_from_the_game()
-                print(data) # TO BE CODED FOR SAVING IN A FILE LATER
-            except:
+                print(data)
+                print("urmeaza add data")
+                try:
+                    self.__add_data(data)
+                except Exception as f:
+                    print(f"An unexpected error occurred: {f}")
+            except Exception as e:
                 print("something went wrong in extract_all_history_games ? ")
+                print(f"An unexpected error occurred: {e}")
             else:
                 self.click_on_x_to_close_previous_games()
                 self.click_3dots()
@@ -179,4 +213,4 @@ class WebController:
                 time.sleep(1)
 
 
-
+# AI RAMAS LA 180
