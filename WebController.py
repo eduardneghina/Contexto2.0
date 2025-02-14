@@ -76,7 +76,7 @@ class WebController:
             else:
                 logging.info("Contexto is fully initiated and ready to use")
             finally:
-                return "este asta un string?"
+                return "este asta un string? "
 
 
     def __click_yes_for_give_up(self):
