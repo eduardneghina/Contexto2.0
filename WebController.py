@@ -2,41 +2,82 @@ import logging
 import time
 import re
 import os
+import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from setuptools.errors import LinkError
 from webdriver_manager.chrome import ChromeDriverManager
 from wonderwords import RandomWord
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
 class WebController:
     def __init__(self):
-        """
-        Hardcoded to use Brave Browser
-        """
-        browser_path = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
-        options = Options()
-        options.binary_location = browser_path
-        service = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service, options=options)
-        self.db_path_directory = "C:\\Temp\\Contexto"
-        self.db_path_file = "C:\\Temp\\Contexto\\data.txt"
+        """Initialize the WebController class."""
+
+        self.db_path_directory = "C:\\Temp\\ContextoSolver"
+        os.makedirs(self.db_path_directory, exist_ok=True)
+
+        self.info_path_file = "C:\\Temp\\ContextoSolver\\logs.txt"
+        with open(self.info_path_file, 'a') as f:
+            f.write("\n" + "=" * 50 + " New Session " + "=" * 50 + "\n")
+
+        file_handler = logging.FileHandler(self.info_path_file, mode='a', encoding='utf-8')
+        file_handler.setLevel(logging.INFO)
+        file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+        logger = logging.getLogger()
+        if not logger.handlers:
+            logger.setLevel(logging.INFO)
+            logger.addHandler(file_handler)
+            logger.addHandler(console_handler)
+
+    ########################################################################################################################
+
+    def start_the_browser(self):
+        try:
+            browser_path = r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"
+            options = Options()
+            options.binary_location = browser_path
+            service = Service(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=options)
+            self.driver.maximize_window()
+        except FileNotFoundError:
+            logging.warning("Brave browser not found at the default location. Google Chrome browser will be executed")
+            try:
+                self.driver = webdriver.Chrome()
+            except Exception as e:
+                logging.error("Chrome browser could not be found - start_the_browser(self) - failed: %s", e)
+            else:
+                self.driver.maximize_window()
+                logging.info("Chrome browser is active")
+        except Exception as e:
+            logging.error("An unexpected error occurred: %s", e)
+
+
 
     def initiate_contexto(self):
-        self.driver.get("https://contexto.me/")
-        self.driver.maximize_window()
-        time.sleep(3)
         try:
-            self.driver.find_element(By.CLASS_NAME, 'fc-primary-button').click()
-        except Exception:
-            logging.error("Consent cookie button could not be pressed. initiate_contexto() failed")
+            self.driver.get("https://contexto.me/")
+            time.sleep(3)
+        except Exception as e:
+            logging.error("Failed to open the website: %s", e)
         else:
-            logging.info("Contexto is fully initiated and ready to use")
-        return "string?"
+            try:
+                self.driver.find_element(By.CLASS_NAME, 'fc-primary-button').click()
+            except Exception:
+                logging.error("Consent cookie button could not be pressed or found.")
+                logging.error("Please press it manually if needed.")
+            else:
+                logging.info("Contexto is fully initiated and ready to use")
+            finally:
+                return "este asta un string?"
+
 
     def __click_yes_for_give_up(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'share-btn')
