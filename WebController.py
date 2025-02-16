@@ -16,8 +16,12 @@ class WebController:
     def __init__(self):
         """Initialize the WebController class."""
 
-        self.db_path_directory = "C:\\Temp\\ContextoSolver"
-        os.makedirs(self.db_path_directory, exist_ok=True)
+        self.path_directory = "C:\\Temp\\ContextoSolver"
+        os.makedirs(self.path_directory, exist_ok=True)
+
+        self.database_path_file = "C:\\Temp\\ContextoSolver\\database.txt"
+        with open(self.database_path_file, 'a') as f:
+            pass
 
         self.info_path_file = "C:\\Temp\\ContextoSolver\\logs.txt"
         with open(self.info_path_file, 'a') as f:
@@ -96,18 +100,23 @@ class WebController:
         logging.info("Inserted random word: %s", random_word)
 
     def __load_data(self):
-        try:
-            with open(self.db_path_file, "r") as infile:
-                return infile.read()
-        except FileNotFoundError:
+        """Load data from the database file."""
+        if not os.path.exists(self.database_path_file):
             logging.warning("File/directory not found. Creating new one.")
-            os.makedirs(self.db_path_directory, exist_ok=True)
-            with open(self.db_path_file, "w") as starting_file:
+            os.makedirs(self.path_directory, exist_ok=True)
+            with open(self.database_path_file, "w") as starting_file:
                 pass
             return ""
 
+        try:
+            with open(self.database_path_file, "r") as infile:
+                return infile.read()
+        except Exception as e:
+            logging.error("An error occurred while reading the file: %s", e)
+            return ""
+
     def __save_data(self, data):
-        with open(self.db_path_file, "w") as outfile:
+        with open(self.database_path_file, "w") as outfile:
             outfile.write(data)
 
     def __add_data(self, new_data):
@@ -128,16 +137,11 @@ class WebController:
         data += "\n" + new_data
         self.__save_data(data)
 
-    def extract_test(self):
-        self.click_3dots()
-        self.click_give_up()
-        time.sleep(3)
-        self.click_closest_word()
-        time.sleep(3)
+    def extract_the_word_list_from_the_game_number(self):
         data = []
         elements = self.driver.find_elements(By.CLASS_NAME, 'row-wrapper')
         for element in elements:
-            data.append(element.text.split('\n'))
+            data.append(tuple(element.text.split('\n')))
         return list(dict.fromkeys(data))
 
     def click_3dots(self):
@@ -154,12 +158,18 @@ class WebController:
                 self.__click_yes_for_give_up()
                 break
 
-    def click_closest_word(self):
+    def click_closest_words(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'button')
         for element in elements:
             if element.text == 'Closest words':
                 element.send_keys(Keys.RETURN)
                 break
+
+    def click_close_closest_words(self):
+        elements = self.driver.find_elements(By.CLASS_NAME, 'modal-close-button')
+        for element in elements:
+            element.click()
+            break
 
     def click_previous_games(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'menu-item')
@@ -193,36 +203,35 @@ class WebController:
             element.click()
             break
 
-    def extract_data_from_game(self):
-        self.click_3dots()
-        self.click_give_up()
-        time.sleep(3)
-        self.click_closest_word()
-        time.sleep(3)
-        data = []
-        elements = self.driver.find_elements(By.CLASS_NAME, 'row-wrapper')
-        for element in elements:
-            data.append(element.text.split('\n'))
-        return list(dict.fromkeys(data))
-
     def extract_all_history_games(self):
-        for _ in range(int(self.get_game_number())):
+        current_game_number = int(self.get_game_number())
+        existing_data = self.__load_data()
+        print(existing_data)
+
+        for game_number in range(current_game_number, -1, -1):
+            if f"#{game_number}" in existing_data:
+                logging.info(f"Game number {game_number} already exists in the database.")
+                continue
+
+            self.click_3dots()
             time.sleep(1)
-            try:
-                data = self.extract_data_from_game()
-                logging.info(data)
-                self.__add_data(data)
-            except Exception as e:
-                logging.error("An unexpected error occurred: %s", e)
-            else:
-                self.click_on_x_to_close_previous_games()
-                self.click_3dots()
-                self.click_previous_games()
-                time.sleep(1)
-                self.click_desired_previous_games(int(self.get_game_number()) - 1)
-                time.sleep(1)
+            self.click_previous_games()
+            time.sleep(1)
+            self.click_desired_previous_games(game_number)
+            time.sleep(1)
+            self.click_3dots()
+            time.sleep(1)
+            self.click_give_up()
+            time.sleep(1)
+            self.click_closest_words()
+            time.sleep(1)
+            word_list = self.extract_the_word_list_from_the_game_number()
+            time.sleep(1)
+            data_line = f"#{game_number} {word_list}\n"
+            print(f"am adaugat {data_line}")
+            time.sleep(1)
+            self.add_data(data_line)
+            time.sleep(1)
+            self.click_close_closest_words()
+            time.sleep(1)
 
-
-#DE REPARAT SA SE OPREASCA CAND GASESTE UN CUVANT CA SA NU MEARGA LA INFINIT SI SA FIE UN UPDATE LOGIC + TO BE TESTED LEL
-
-#
