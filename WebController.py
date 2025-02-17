@@ -133,9 +133,15 @@ class WebController:
             logging.info("Data added successfully.")
 
     def add_data(self, new_data):
-        data = self.__load_data()
-        data += "\n" + new_data
-        self.__save_data(data)
+        existing_data = self.__load_data()
+        new_data = "\n" + new_data if existing_data else new_data
+        updated_data = new_data + existing_data
+        sorted_data = sorted(
+            updated_data.splitlines(),
+            key=lambda x: int(re.search(r'#(\d+)', x).group(1)) if re.search(r'#(\d+)', x) else -1,
+            reverse=True
+        )
+        self.__save_data("\n".join(sorted_data))
 
     def extract_the_word_list_from_the_game_number(self):
         data = []
@@ -206,12 +212,14 @@ class WebController:
     def extract_all_history_games(self):
         current_game_number = int(self.get_game_number())
         existing_data = self.__load_data()
-        print(existing_data)
+        all_games_exist = True
 
         for game_number in range(current_game_number, -1, -1):
-            if f"#{game_number}" in existing_data:
+            if re.search(rf"^#{game_number}\b", existing_data, re.MULTILINE):
                 logging.info(f"Game number {game_number} already exists in the database.")
                 continue
+            else:
+                all_games_exist = False
 
             self.click_3dots()
             time.sleep(1)
@@ -235,3 +243,6 @@ class WebController:
             self.click_close_closest_words()
             time.sleep(1)
 
+        if all_games_exist:
+            logging.info("All games are already in the database. Exiting method.")
+            return
