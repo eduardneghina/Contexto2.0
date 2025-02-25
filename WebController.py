@@ -119,19 +119,6 @@ class WebController:
         with open(self.database_path_file, "w") as outfile:
             outfile.write(data)
 
-    def __add_data(self, new_data):
-        data = self.__load_data()
-        if isinstance(new_data, list):
-            new_data = "\n".join(map(str, new_data))
-        elif not isinstance(new_data, str):
-            new_data = str(new_data)
-        if new_data in data:
-            logging.info("Data is already in the file. No changes made.")
-        else:
-            data += "\n" + new_data
-            self.__save_data(data)
-            logging.info("Data added successfully.")
-
     def add_data(self, new_data):
         existing_data = self.__load_data()
         new_data = "\n" + new_data if existing_data else new_data
@@ -245,4 +232,3 @@ class WebController:
 
         if all_games_exist:
             logging.info("All games are already in the database. Exiting method.")
-            return
