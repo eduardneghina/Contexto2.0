@@ -79,10 +79,45 @@ class WebController:
                 logging.error("Please press it manually if needed.")
             else:
                 logging.info("Contexto is fully initiated and ready to use")
-            finally:
-                return "este asta un string? "
 
+    def extract_all_history_games(self):
+        current_game_number = int(self.__get_game_number())
+        existing_data = self.__load_data()
+        all_games_exist = True
 
+        for game_number in range(current_game_number, -1, -1):
+            if re.search(rf"^#{game_number}\b", existing_data, re.MULTILINE):
+                logging.info(f"Game number {game_number} already exists in the database.")
+                continue
+            else:
+                all_games_exist = False
+
+            self.__click_3dots()
+            time.sleep(1)
+            self.__click_previous_games()
+            time.sleep(1)
+            self.__click_desired_previous_games(game_number)
+            time.sleep(1)
+            self.__click_3dots()
+            time.sleep(1)
+            self.__click_give_up()
+            time.sleep(1)
+            self.__click_closest_words()
+            time.sleep(1)
+            word_list = self.__extract_the_word_list_from_the_game_number()
+            time.sleep(1)
+            data_line = f"#{game_number} {word_list}\n"
+            print(f"Data added: {data_line}")
+            time.sleep(1)
+            self.__add_data(data_line)
+            time.sleep(1)
+            self.__click_close_closest_words()
+            time.sleep(1)
+
+        if all_games_exist:
+            logging.info("All games are already in the database. Exiting method.")
+
+############################# PRIVATE FUNCTIONS ########################################
     def __click_yes_for_give_up(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'share-btn')
         for element in elements:
@@ -98,6 +133,13 @@ class WebController:
             element.send_keys(random_word, Keys.ENTER)
             break
         logging.info("Inserted random word: %s", random_word)
+
+    def insert_a_word(self, word):
+        elements = self.driver.find_elements(By.CLASS_NAME, 'word')
+        for element in elements:
+            element.send_keys(str(word))
+            element.send_keys(Keys.ENTER)
+            time.sleep(1)
 
     def __load_data(self):
         """Load data from the database file."""
@@ -119,7 +161,7 @@ class WebController:
         with open(self.database_path_file, "w") as outfile:
             outfile.write(data)
 
-    def add_data(self, new_data):
+    def __add_data(self, new_data):
         existing_data = self.__load_data()
         new_data = "\n" + new_data if existing_data else new_data
         updated_data = new_data + existing_data
@@ -130,20 +172,20 @@ class WebController:
         )
         self.__save_data("\n".join(sorted_data))
 
-    def extract_the_word_list_from_the_game_number(self):
+    def __extract_the_word_list_from_the_game_number(self):
         data = []
         elements = self.driver.find_elements(By.CLASS_NAME, 'row-wrapper')
         for element in elements:
             data.append(tuple(element.text.split('\n')))
         return list(dict.fromkeys(data))
 
-    def click_3dots(self):
+    def __click_3dots(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'btn')
         for element in elements:
             element.click()
             break
 
-    def click_give_up(self):
+    def __click_give_up(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'menu-item')
         for element in elements:
             if element.text == 'Give up':
@@ -151,27 +193,27 @@ class WebController:
                 self.__click_yes_for_give_up()
                 break
 
-    def click_closest_words(self):
+    def __click_closest_words(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'button')
         for element in elements:
             if element.text == 'Closest words':
                 element.send_keys(Keys.RETURN)
                 break
 
-    def click_close_closest_words(self):
+    def __click_close_closest_words(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'modal-close-button')
         for element in elements:
             element.click()
             break
 
-    def click_previous_games(self):
+    def __click_previous_games(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'menu-item')
         for element in elements:
             if element.text == 'Previous games':
                 element.click()
                 break
 
-    def click_desired_previous_games(self, game_number):
+    def __click_desired_previous_games(self, game_number):
         elements = self.driver.find_elements(By.CLASS_NAME, 'game-selection-button')
         for element in elements:
             if re.search('#' + str(game_number) + '\n', element.text):
@@ -179,56 +221,36 @@ class WebController:
                 element.click()
                 break
 
-    def click_on_random_from_previous_games(self):
+    def __click_on_random_from_previous_games(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'button')
         for element in elements:
             if element.text == "Random":
                 element.click()
                 break
 
-    def get_game_number(self):
+    def __get_game_number(self):
         element = self.driver.find_element(By.XPATH, "//span[contains(text(), '#')]")
         return element.text.split('#')[1].strip()
 
-    def click_on_x_to_close_previous_games(self):
+    def __click_on_x_to_close_previous_games(self):
         elements = self.driver.find_elements(By.CLASS_NAME, "modal-close-button")
         for element in elements:
             element.click()
             break
 
-    def extract_all_history_games(self):
-        current_game_number = int(self.get_game_number())
-        existing_data = self.__load_data()
-        all_games_exist = True
+    def clear_text_area(self):
+        elements = self.driver.find_elements(By.CLASS_NAME, 'word')
+        for e in elements:
+            e.clear()
 
-        for game_number in range(current_game_number, -1, -1):
-            if re.search(rf"^#{game_number}\b", existing_data, re.MULTILINE):
-                logging.info(f"Game number {game_number} already exists in the database.")
-                continue
-            else:
-                all_games_exist = False
+    def read_returned_text_for_first_try(self):
+        elements = self.driver.find_elements(By.CLASS_NAME, 'message-text')
+        for element in elements:
+            return element.text
 
-            self.click_3dots()
-            time.sleep(1)
-            self.click_previous_games()
-            time.sleep(1)
-            self.click_desired_previous_games(game_number)
-            time.sleep(1)
-            self.click_3dots()
-            time.sleep(1)
-            self.click_give_up()
-            time.sleep(1)
-            self.click_closest_words()
-            time.sleep(1)
-            word_list = self.extract_the_word_list_from_the_game_number()
-            time.sleep(1)
-            data_line = f"#{game_number} {word_list}\n"
-            print(f"am adaugat {data_line}")
-            time.sleep(1)
-            self.add_data(data_line)
-            time.sleep(1)
-            self.click_close_closest_words()
-            time.sleep(1)
-
-        if all_games_exist:
-            logging.info("All games are already in the database. Exiting method.")
+    def get_word_and_id(self):
+        elements = self.driver.find_elements(By.XPATH, '//*[@id="root"]/div/div[4]/div/div/div[2]')
+        for e in elements:
+            if e is not None:
+                a = e.text.split()
+                return a
