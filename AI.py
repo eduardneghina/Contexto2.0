@@ -1,14 +1,22 @@
 import gensim.downloader as api
 import re
+import asyncio
+
+
 
 class AI:
     def __init__(self):
         """Initialize the AI class with pre-trained GloVe models."""
-
-        print("Loading GloVe Wikipedia (300D) model ~1.6 GB - Average ETA: 45s")
-        self.glove_wiki_300 = api.load('glove-wiki-gigaword-300')
-        print("GloVe Wikipedia (300D) model loaded successfully.")
+        self.glove_wiki_300 = None  # Placeholder for the model
         self.database_path_file = "C:\\Temp\\ContextoSolver\\database.txt"
+        self.loading_task_for_glove_model = asyncio.create_task(self.load_glove_model())  # Start loading in the background
+
+    async def load_glove_model(self):
+        """Load the GloVe Wikipedia (300D) model asynchronously."""
+        print("Loading GloVe Wikipedia (300D) model ~1.6 GB - Average ETA: 45s")
+        # Run the blocking `api.load` in a separate thread
+        self.glove_wiki_300 = await asyncio.to_thread(api.load, 'glove-wiki-gigaword-300')
+        print("GloVe Wikipedia (300D) model loaded successfully.")
 
     def return_all_words_from_database_no_duplicates_alphabetically(self):
         """
