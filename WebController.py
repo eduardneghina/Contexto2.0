@@ -80,6 +80,8 @@ class WebController:
             else:
                 logging.info("Contexto is fully initiated and ready to use")
 
+
+
     def extract_all_history_games(self):
         current_game_number = int(self.__get_game_number())
         existing_data = self.__load_data()
@@ -117,7 +119,8 @@ class WebController:
         if all_games_exist:
             logging.info("All games are already in the database. Exiting method.")
 
-############################# PRIVATE FUNCTIONS ########################################
+
+
     def __click_yes_for_give_up(self):
         elements = self.driver.find_elements(By.CLASS_NAME, 'share-btn')
         for element in elements:

@@ -2,6 +2,8 @@ from WebController import *
 from AI import *
 import random
 
+
+
 class GameController:
     def __init__(self):
         self._web_controller = WebController()

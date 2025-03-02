@@ -9,7 +9,7 @@ class AI:
         """Initialize the AI class with pre-trained GloVe models."""
         self.glove_wiki_300 = None  # Placeholder for the model
         self.database_path_file = "C:\\Temp\\ContextoSolver\\database.txt"
-        self.loading_task_for_glove_model = asyncio.create_task(self.load_glove_model())  # Start loading in the background
+        self.load_glove_model = asyncio.create_task(self.load_glove_model())
 
     async def load_glove_model(self):
         """Load the GloVe Wikipedia (300D) model asynchronously."""
